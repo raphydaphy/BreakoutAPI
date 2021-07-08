@@ -1,12 +1,9 @@
 package com.raphydaphy.breakoutapi.breakout;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.raphydaphy.breakoutapi.BreakoutAPI;
-import com.raphydaphy.breakoutapi.BreakoutAPIClient;
 import com.raphydaphy.breakoutapi.breakout.window.BreakoutWindow;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -16,21 +13,26 @@ import org.lwjgl.opengl.GL45;
 public abstract class AbstractBreakout {
   private Identifier identifier;
   protected BreakoutWindow window;
-  protected Framebuffer framebuffer;
+  protected SimpleFramebuffer framebuffer;
   protected MinecraftClient client;
+  protected SavedGlState glState;
 
   public AbstractBreakout(Identifier identifier, BreakoutWindow window) {
     this.identifier = identifier;
     this.window = window;
     this.client = MinecraftClient.getInstance();
+    this.glState = new SavedGlState();
+    try (BreakoutWindow.ContextHolder ctx = window.switchToContext()) {
+      this.glState.glRecord();
 
-    this.framebuffer = new Framebuffer(this.window.getFramebufferWidth(), this.window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
-    this.framebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+      this.framebuffer = new SimpleFramebuffer(this.window.getFramebufferWidth(), this.window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
+      this.framebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
 
-    RenderSystem.setupDefaultState(0, 0, this.window.getFramebufferWidth(), this.window.getFramebufferHeight());
+      RenderSystem.setupDefaultState(0, 0, this.window.getFramebufferWidth(), this.window.getFramebufferHeight());
 
-    this.onResolutionChanged(this.window.getFramebufferWidth(), this.window.getFramebufferHeight());
-    this.window.keeper.getChainResolutionChangedCallback().add(this::onResolutionChanged);
+      this.onResolutionChanged(this.window.getFramebufferWidth(), this.window.getFramebufferHeight());
+      this.window.keeper.getChainResolutionChangedCallback().add(this::onResolutionChanged);
+    }
   }
 
   public abstract void render(MatrixStack matrixStack);
@@ -39,7 +41,10 @@ public abstract class AbstractBreakout {
   public void setupRender() {
     if (this.window.shouldClose()) return;
 
+    RenderContextTracker.pushContext(this);
+
     GLFW.glfwMakeContextCurrent(this.window.getHandle());
+    glState.apply();
 
     MatrixStack matrixStack = RenderSystem.getModelViewStack();
     matrixStack.push();
@@ -64,6 +69,8 @@ public abstract class AbstractBreakout {
 
     this.postRender();
 
+    glState.record();
+    RenderContextTracker.popContext();
   }
 
 

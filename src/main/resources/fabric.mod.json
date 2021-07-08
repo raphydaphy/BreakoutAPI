@@ -28,6 +28,7 @@
   "mixins": [
     "breakoutapi.mixins.json"
   ],
+  "accessWidener": "breakoutapi.accesswidener",
 
   "depends": {
     "fabricloader": ">=0.7.4",

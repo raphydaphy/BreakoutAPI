@@ -57,7 +57,7 @@ public class Font {
 
     public void load() {
         try {
-            InputStream stream = MinecraftClient.getInstance().getResourcePackDownloader().getPack().open(ResourceType.CLIENT_RESOURCES, path);
+            InputStream stream = MinecraftClient.getInstance().getResourcePackProvider().getPack().open(ResourceType.CLIENT_RESOURCES, path);
             data = IOUtil.resourceToByteBuffer(stream);
         } catch (IOException e) {
             throw FAILED_TO_LOAD_FONT.create(e, path.toString());

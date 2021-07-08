@@ -1,10 +1,15 @@
 package com.raphydaphy.breakoutapi.breakout.window;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.raphydaphy.breakoutapi.BreakoutAPI;
 import com.raphydaphy.breakoutapi.breakout.window.callback.BreakoutWindowCallbackKeeper;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.TextureUtil;
+import net.minecraft.client.gl.GlDebug;
+import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.util.Monitor;
 import net.minecraft.client.util.Window;
 import net.minecraft.resource.ResourceType;
@@ -36,6 +41,8 @@ public class BreakoutWindow {
   private int framebufferWidth;
   private int framebufferHeight;
 
+  protected Reference2IntMap<VertexFormat> vertexFormatVAOs = new Reference2IntOpenHashMap<>();
+
   public final BreakoutWindowCallbackKeeper keeper;
 
   /***
@@ -63,6 +70,13 @@ public class BreakoutWindow {
     
     // This is to release the current context, as per the documentation.
     GLFW.glfwMakeContextCurrent(NULL);
+    GLFW.glfwDefaultWindowHints();
+    GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_API);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_CREATION_API, GLFW.GLFW_NATIVE_CONTEXT_API);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, 1);
     this.handle = GLFW.glfwCreateWindow(this.width, this.height, title, monitor == null ? 0L : monitor.getHandle(), sharedContext);
     
     if (this.handle == NULL) {
@@ -81,6 +95,7 @@ public class BreakoutWindow {
     }
 
     GLFW.glfwMakeContextCurrent(this.handle);
+    GlDebug.enableDebug(this.client.options.glDebugVerbosity, false);
     this.updateFramebufferSize();
 
     this.keeper = new BreakoutWindowCallbackKeeper();
@@ -89,6 +104,7 @@ public class BreakoutWindow {
     this.keeper.getChainFramebufferSizeCallback().add(this::onFramebufferSizeChanged);
     this.keeper.getChainWindowSizeCallback().add(this::onWindowSizeChanged);
     this.keeper.getChainWindowPosCallback().add(this::onWindowPosChanged);
+    GLFW.glfwMakeContextCurrent(sharedContext);
   }
 
   public void setPos(int x, int y) {
@@ -160,8 +176,8 @@ public class BreakoutWindow {
     RenderSystem.assertThread(RenderSystem::isInInitPhase);
 
     try {
-      InputStream icon16Stream = this.client.getResourcePackDownloader().getPack().open(ResourceType.CLIENT_RESOURCES, icon16);
-      InputStream icon32Stream = this.client.getResourcePackDownloader().getPack().open(ResourceType.CLIENT_RESOURCES, icon32);
+      InputStream icon16Stream = this.client.getResourcePackProvider().getPack().open(ResourceType.CLIENT_RESOURCES, icon16);
+      InputStream icon32Stream = this.client.getResourcePackProvider().getPack().open(ResourceType.CLIENT_RESOURCES, icon32);
 
       MemoryStack memoryStack = MemoryStack.stackPush();
       Throwable var4 = null;
@@ -231,7 +247,7 @@ public class BreakoutWindow {
 
     ByteBuffer var6;
     try {
-      byteBuffer = TextureUtil.readAllToByteBuffer(in);
+      byteBuffer = TextureUtil.readResource(in);
       byteBuffer.rewind();
       var6 = STBImage.stbi_load_from_memory(byteBuffer, x, y, channels, 0);
     } finally {
@@ -283,5 +299,21 @@ public class BreakoutWindow {
 
   public void destroy() {
     GLFW.glfwDestroyWindow(this.handle);
+  }
+
+  public int getVAOforVertexFormat(VertexFormat fmt) {
+    return vertexFormatVAOs.computeIntIfAbsent(fmt, format -> GlStateManager._glGenVertexArrays());
+  }
+
+  public ContextHolder switchToContext() {
+    GLFW.glfwMakeContextCurrent(handle);
+    return new ContextHolder();
+  }
+
+  public class ContextHolder implements AutoCloseable {
+    @Override
+    public void close() {
+      GLFW.glfwMakeContextCurrent(BreakoutWindow.this.client.getWindow().getHandle());
+    }
   }
 }

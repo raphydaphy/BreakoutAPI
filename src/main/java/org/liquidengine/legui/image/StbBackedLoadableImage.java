@@ -57,7 +57,7 @@ public class StbBackedLoadableImage extends LoadableImage {
     @Override
     public void load() {
         try {
-            InputStream stream = MinecraftClient.getInstance().getResourcePackDownloader().getPack().open(ResourceType.CLIENT_RESOURCES, getPath());
+            InputStream stream = MinecraftClient.getInstance().getResourcePackProvider().getPack().open(ResourceType.CLIENT_RESOURCES, getPath());
             ByteBuffer byteBuffer = IOUtil.resourceToByteBuffer(stream);
             int[] width = {0};
             int[] height = {0};

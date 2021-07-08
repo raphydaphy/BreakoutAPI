@@ -3,12 +3,14 @@
   "minVersion": "0.8",
   "package": "com.raphydaphy.breakoutapi.mixin",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
-  ],
   "client": [
+    "client.CapabilityTrackerAccessor",
+    "client.GlStateManagerAccessor",
     "client.MinecraftClientMixin",
+    "client.MonitorTrackerMixin",
     "client.WindowMixin",
-    "client.MonitorTrackerMixin"
+    "client.VertexFormatMixin",
+    "client.BufferRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

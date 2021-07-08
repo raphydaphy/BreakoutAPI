@@ -47,7 +47,7 @@ public class Configuration {
     private static void initialize() {
         Gson gson = new Gson();
         try {
-            DefaultResourcePack pack = MinecraftClient.getInstance().getResourcePackDownloader().getPack();
+            DefaultResourcePack pack = MinecraftClient.getInstance().getResourcePackProvider().getPack();
             InputStream defaultConfigStream = pack.open(ResourceType.CLIENT_RESOURCES, new Identifier(Legui.ID, "default_config.json"));
             String defaultConfig = new String(IOUtil.resourceToString(defaultConfigStream).getBytes(), StandardCharsets.UTF_8);
             JsonObject initial = gson.fromJson(defaultConfig, JsonObject.class);

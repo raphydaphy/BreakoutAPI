@@ -1,6 +1,7 @@
 package com.raphydaphy.breakoutapi.breakout;
 
 import com.raphydaphy.breakoutapi.breakout.window.BreakoutWindow;
+import com.raphydaphy.breakoutapi.mixin.client.BufferRendererAccessor;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import org.liquidengine.legui.animation.AnimatorProvider;
@@ -22,18 +23,20 @@ public abstract class GUIBreakout extends AbstractBreakout {
   public GUIBreakout(Identifier identifier, BreakoutWindow window) {
     super(identifier, window);
 
-    this.frame = new Frame(this.window.getWidth(), this.window.getHeight());
+    try (BreakoutWindow.ContextHolder ctx = window.switchToContext()) {
+      this.frame = new Frame(this.window.getWidth(), this.window.getHeight());
 
-    this.context = new Context(this.getWindow().getHandle());
+      this.context = new Context(this.getWindow().getHandle());
 
-    this.systemEventProcessor = new SystemEventProcessorImpl();
-    SystemEventProcessor.addDefaultCallbacks(this.window.keeper, this.systemEventProcessor);
+      this.systemEventProcessor = new SystemEventProcessorImpl();
+      SystemEventProcessor.addDefaultCallbacks(this.window.keeper, this.systemEventProcessor);
 
-    this.renderer = new NvgRenderer();
-    renderer.initialize();
+      this.renderer = new NvgRenderer();
+      renderer.initialize();
 
-    this.window.keeper.getChainWindowSizeCallback().add(this::onWindowSizeChanged);
-    this.createGuiElements(this.window.getWidth(), this.window.getHeight());
+      this.window.keeper.getChainWindowSizeCallback().add(this::onWindowSizeChanged);
+      this.createGuiElements(this.window.getWidth(), this.window.getHeight());
+    }
   }
 
   protected abstract void createGuiElements(int width, int height);
@@ -59,6 +62,10 @@ public abstract class GUIBreakout extends AbstractBreakout {
     this.context.updateGlfwWindow();
     LayoutManager.getInstance().layout(this.frame);
     this.renderer.render(this.getFrame(), this.getContext());
+
+    BufferRendererAccessor.setCurrentElementBuffer(-1);
+    BufferRendererAccessor.setCurrentVertexArray(-1);
+    BufferRendererAccessor.setCurrentVertexBuffer(-1);
   }
 
   @Override

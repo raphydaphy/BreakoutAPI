@@ -26,10 +26,10 @@ public abstract class Breakout extends AbstractBreakout {
     RenderSystem.clearColor(1, 1, 1, 1);
     RenderSystem.clear(GL30.GL_COLOR_BUFFER_BIT | GL30.GL_DEPTH_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
 
-    Matrix4f matrix4f = Matrix4f.method_34239(0.0F, (float)((double)window.getFramebufferWidth()), 0.0F, (float)((double)window.getFramebufferHeight()), 1000.0F, 3000.0F);
+    Matrix4f matrix4f = Matrix4f.projectionMatrix(0.0F, (float)((double)window.getFramebufferWidth()), 0.0F, (float)((double)window.getFramebufferHeight()), 1000.0F, 3000.0F);
     RenderSystem.setProjectionMatrix(matrix4f);
 
-    matrixStack.method_34426();
+    matrixStack.loadIdentity();
     matrixStack.translate(0.0D, 0.0D, -2000.0D);
     RenderSystem.applyModelViewMatrix();
     DiffuseLighting.enableGuiDepthLighting();
